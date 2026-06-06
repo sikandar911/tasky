@@ -234,6 +234,14 @@ class TaskViewSet(viewsets.ModelViewSet):
         return self.update(request, *args, **kwargs)
 
 
+from rest_framework.pagination import PageNumberPagination
+
+class CommentPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 @extend_schema(tags=['Comments'])
 class TaskCommentViewSet(viewsets.ModelViewSet):
     """
@@ -246,6 +254,7 @@ class TaskCommentViewSet(viewsets.ModelViewSet):
     """
     serializer_class = TaskCommentSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = CommentPagination
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def _get_task(self):

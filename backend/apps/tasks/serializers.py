@@ -1,4 +1,4 @@
-﻿from rest_framework import serializers
+from rest_framework import serializers
 from core.storage import generate_presigned_url
 from apps.accounts.serializers import UserDetailSerializer
 from .models import Task, TaskAttachment, TaskComment
@@ -36,15 +36,26 @@ class TaskSerializer(serializers.ModelSerializer):
     created_by = UserDetailSerializer(read_only=True)
     assigned_to = UserDetailSerializer(read_only=True)
     assigned_to_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
+    project_name = serializers.CharField(source='project.name', read_only=True)
 
     class Meta:
         model = Task
         fields = (
-            'id', 'project', 'title', 'description', 'status', 'priority',
+            'id', 'project', 'project_name', 'title', 'description', 'status', 'priority',
             'created_by', 'assigned_to', 'assigned_to_id',
             'due_date', 'attachments', 'created_at', 'updated_at',
         )
         read_only_fields = ('id', 'created_by', 'created_at', 'updated_at', 'attachments')
+
+    def to_internal_value(self, data):
+        if 'description' in data and isinstance(data['description'], str):
+            import json
+            try:
+                json.loads(data['description'])
+            except (ValueError, TypeError):
+                data = data.copy() if hasattr(data, 'copy') else dict(data)
+                data['description'] = '{}'
+        return super().to_internal_value(data)
 
     def update(self, instance, validated_data):
         assigned_to_id = validated_data.pop('assigned_to_id', ...)
@@ -89,12 +100,10 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         if 'description' in data and isinstance(data['description'], str):
             import json
             try:
-                mutable = data.copy() if hasattr(data, 'copy') else dict(data)
-                mutable['description'] = json.loads(data['description'])
-                data = mutable
+                json.loads(data['description'])
             except (ValueError, TypeError):
                 data = data.copy() if hasattr(data, 'copy') else dict(data)
-                data['description'] = {}
+                data['description'] = '{}'
         return super().to_internal_value(data)
 
     def create(self, validated_data):

@@ -7,6 +7,7 @@ import DashboardPage from '@/pages/DashboardPage';
 import ProjectsPage from '@/pages/projects/ProjectsPage';
 import ProjectDetailPage from '@/pages/projects/ProjectDetailPage';
 import TasksPage from '@/pages/tasks/TasksPage';
+import TaskDetailPage from '@/pages/tasks/TaskDetailPage';
 import UsersPage from '@/pages/users/UsersPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/tasks/:id" element={<TaskDetailPage />} />
         <Route
           path="/users"
           element={

@@ -1,5 +1,5 @@
 import api from '@/lib/axios';
-import { TaskFiltersParams, TaskComment } from '@/types';
+import { TaskFiltersParams, TaskComment, PaginatedResponse } from '@/types';
 
 export const getTasksApi = (params?: TaskFiltersParams) =>
   api.get('/tasks/', { params }).then((r) => r.data);
@@ -20,10 +20,8 @@ export const deleteTaskApi = (id: string) =>
 
 // ── Comments ──────────────────────────────────────────────────────────────────
 
-export const getCommentsApi = (taskId: string): Promise<TaskComment[]> =>
-  api.get(`/tasks/${taskId}/comments/`).then((r) =>
-    Array.isArray(r.data) ? r.data : r.data.results ?? [],
-  );
+export const getCommentsApi = (taskId: string, params?: { page?: number }): Promise<PaginatedResponse<TaskComment>> =>
+  api.get(`/tasks/${taskId}/comments/`, { params }).then((r) => r.data);
 
 export const createCommentApi = (taskId: string, body: Record<string, unknown>): Promise<TaskComment> =>
   api.post(`/tasks/${taskId}/comments/`, { body }).then((r) => r.data);

@@ -3,7 +3,7 @@ from drf_spectacular.utils import (
     OpenApiParameter,
 )
 from drf_spectacular.types import OpenApiTypes
-from rest_framework import generics, status
+from rest_framework import generics, status, filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -244,4 +244,6 @@ class UserVerifyView(APIView):
 class UserListView(generics.ListAPIView):
     serializer_class = UserDetailSerializer
     permission_classes = [IsSuperAdminOrAdmin]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['email', 'full_name']
     queryset = User.objects.all().order_by('-date_joined')

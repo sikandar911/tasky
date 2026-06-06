@@ -1,6 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { addMemberApi, removeMemberApi } from '@/api/projects';
-import { ProjectMember } from '@/types';
+import { getUsersApi } from '@/api/users';
+import { ProjectMember, User } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
@@ -24,14 +25,25 @@ const roleColors: Record<string, string> = {
 
 export default function MembersList({ projectId, members, isOwner }: MembersListProps) {
   const qc = useQueryClient();
-  const [userId, setUserId] = useState('');
+  const [search, setSearch] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const { data: usersData, isLoading: isLoadingUsers } = useQuery({
+    queryKey: ['users-search', search],
+    queryFn: () => getUsersApi({ search }),
+    enabled: showAdd && search.length >= 2,
+  });
+
+  const searchResults: User[] = usersData?.results || [];
 
   const addMutation = useMutation({
-    mutationFn: () => addMemberApi(projectId, userId),
+    mutationFn: () => addMemberApi(projectId, selectedUser?.id || ''),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['project', projectId] });
-      setUserId('');
+      setSearch('');
+      setSelectedUser(null);
       setShowAdd(false);
     },
   });
@@ -62,21 +74,68 @@ export default function MembersList({ projectId, members, isOwner }: MembersList
       </div>
 
       {showAdd && isOwner && (
-        <div className="mb-4 p-3 bg-bg-tertiary border border-bg-border rounded-lg">
-          <p className="text-xs text-text-muted mb-2">Enter the user's UUID to add them:</p>
+        <div className="mb-4 p-3 bg-bg-tertiary border border-bg-border rounded-lg relative">
+          <p className="text-xs text-text-muted mb-2">Search user by email or name to add them:</p>
           <div className="flex gap-2">
-            <input
-              type="text"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="User UUID..."
-              className="flex-1 bg-bg-secondary border border-bg-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
-            />
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={selectedUser ? selectedUser.email : search}
+                onChange={(e) => {
+                  if (selectedUser) setSelectedUser(null);
+                  setSearch(e.target.value);
+                  setDropdownOpen(true);
+                }}
+                onFocus={() => setDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
+                placeholder="Type user email..."
+                className="w-full bg-bg-secondary border border-bg-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              />
+              
+              {selectedUser && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedUser(null);
+                    setSearch('');
+                  }}
+                  className="absolute right-2 top-2.5 text-xs text-text-muted hover:text-accent-red"
+                >
+                  Clear
+                </button>
+              )}
+
+              {dropdownOpen && search.length >= 2 && !selectedUser && (
+                <div className="absolute z-10 w-full mt-1 bg-bg-secondary border border-bg-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {isLoadingUsers ? (
+                    <p className="text-xs text-text-muted p-3">Searching...</p>
+                  ) : searchResults.length === 0 ? (
+                    <p className="text-xs text-text-muted p-3">No users found.</p>
+                  ) : (
+                    searchResults
+                      .filter((u) => !members.some((m) => m.user.id === u.id))
+                      .map((u) => (
+                        <div
+                          key={u.id}
+                          onClick={() => {
+                            setSelectedUser(u);
+                            setDropdownOpen(false);
+                          }}
+                          className="px-3 py-2 hover:bg-bg-tertiary cursor-pointer border-b border-bg-border/30 last:border-b-0 text-left"
+                        >
+                          <p className="text-xs font-semibold text-text-primary">{u.full_name}</p>
+                          <p className="text-[10px] text-text-muted">{u.email}</p>
+                        </div>
+                      ))
+                  )}
+                </div>
+              )}
+            </div>
             <Button
               size="sm"
               loading={addMutation.isPending}
               onClick={() => addMutation.mutate()}
-              disabled={!userId.trim()}
+              disabled={!selectedUser}
             >
               Add
             </Button>

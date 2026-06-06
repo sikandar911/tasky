@@ -124,10 +124,19 @@ SIMPLE_JWT = {
 }
 
 # MinIO / S3-compatible storage
+MINIO_ENDPOINT = config('MINIO_ENDPOINT', default='127.0.0.1')
+MINIO_PORT = config('MINIO_PORT', default='9000')
+MINIO_USE_SSL = config('MINIO_USE_SSL', default=False, cast=bool)
+
+if not MINIO_ENDPOINT.startswith(('http://', 'https://')):
+    protocol = 'https://' if MINIO_USE_SSL else 'http://'
+    AWS_S3_ENDPOINT_URL = f"{protocol}{MINIO_ENDPOINT}:{MINIO_PORT}"
+else:
+    AWS_S3_ENDPOINT_URL = MINIO_ENDPOINT
+
 AWS_ACCESS_KEY_ID = config('MINIO_ACCESS_KEY', default='minioadmin')
 AWS_SECRET_ACCESS_KEY = config('MINIO_SECRET_KEY', default='minioadmin')
-AWS_STORAGE_BUCKET_NAME = config('MINIO_BUCKET', default='task-assets')
-AWS_S3_ENDPOINT_URL = config('MINIO_ENDPOINT', default='http://127.0.0.1:9000')
+AWS_STORAGE_BUCKET_NAME = config('MINIO_BUCKET_NAME', default=config('MINIO_BUCKET', default='task-assets'))
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = 'private'
 AWS_S3_VERIFY = False

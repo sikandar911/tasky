@@ -10,6 +10,7 @@ import Spinner from '@/components/ui/Spinner';
 import { useState } from 'react';
 import { Plus, FolderKanban } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { useAuthStore } from '@/store/authStore';
 
 interface ProjectFormData {
   name: string;
@@ -18,6 +19,7 @@ interface ProjectFormData {
 
 export default function ProjectsPage() {
   const qc = useQueryClient();
+  const user = useAuthStore((s) => s.user);
   const [isOpen, setIsOpen] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ProjectFormData>();
 
@@ -44,9 +46,11 @@ export default function ProjectsPage() {
           <h2 className="text-lg font-semibold text-text-primary">Projects</h2>
           <p className="text-sm text-text-secondary mt-0.5">{projects.length} project{projects.length !== 1 ? 's' : ''}</p>
         </div>
-        <Button leftIcon={<Plus size={14} />} onClick={() => setIsOpen(true)}>
-          New Project
-        </Button>
+        {user?.role !== 'MEMBER' && (
+          <Button leftIcon={<Plus size={14} />} onClick={() => setIsOpen(true)}>
+            New Project
+          </Button>
+        )}
       </div>
 
       {isLoading ? (

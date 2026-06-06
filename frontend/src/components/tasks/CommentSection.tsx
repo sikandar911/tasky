@@ -80,18 +80,24 @@ export default function CommentSection({ taskId }: { taskId: string }) {
   const user = useAuthStore((s) => s.user);
   const qc = useQueryClient();
   const [body, setBody] = useState<Record<string, unknown>>({});
+  const [page, setPage] = useState(1);
 
-  const { data: comments = [], isLoading } = useQuery<TaskComment[]>({
-    queryKey: ['comments', taskId],
-    queryFn: () => getCommentsApi(taskId),
+  const { data: commentsData, isLoading } = useQuery({
+    queryKey: ['comments', taskId, page],
+    queryFn: () => getCommentsApi(taskId, { page }),
     enabled: !!taskId,
   });
+
+  const comments = commentsData?.results || [];
+  const totalCount = commentsData?.count || 0;
+  const totalPages = Math.ceil(totalCount / 10);
 
   const createMut = useMutation({
     mutationFn: () => createCommentApi(taskId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['comments', taskId] });
       setBody({});
+      setPage(1);
     },
   });
 
@@ -103,7 +109,7 @@ export default function CommentSection({ taskId }: { taskId: string }) {
     <div className="space-y-4">
       <p className="text-xs font-semibold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
         <MessageSquare size={12} />
-        Comments ({comments.length})
+        Comments ({totalCount})
       </p>
 
       {isLoading ? (
@@ -113,19 +119,47 @@ export default function CommentSection({ taskId }: { taskId: string }) {
       ) : comments.length === 0 ? (
         <p className="text-xs text-text-muted text-center py-3">No comments yet. Be the first!</p>
       ) : (
-        <div className="space-y-4 max-h-64 overflow-y-auto pr-1">
-          {comments.map((c) => (
-            <CommentItem
-              key={c.id}
-              comment={c}
-              taskId={taskId}
-              canDelete={
-                c.author.id === user?.id ||
-                user?.role === 'SUPERADMIN' ||
-                user?.role === 'ADMIN'
-              }
-            />
-          ))}
+        <div className="space-y-4">
+          <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
+            {comments.map((c) => (
+              <CommentItem
+                key={c.id}
+                comment={c}
+                taskId={taskId}
+                canDelete={
+                  c.author.id === user?.id ||
+                  user?.role === 'SUPERADMIN' ||
+                  user?.role === 'ADMIN'
+                }
+              />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2 border-t border-bg-border/30">
+              <span className="text-[10px] text-text-muted">
+                Page {page} of {totalPages} ({totalCount} total comments)
+              </span>
+              <div className="flex gap-1.5">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

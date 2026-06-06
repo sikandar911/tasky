@@ -1,6 +1,6 @@
 import api from '@/lib/axios';
 
-export const getUsersApi = (params?: { page?: number }) =>
+export const getUsersApi = (params?: { page?: number; search?: string }) =>
   api.get('/users/', { params }).then((r) => r.data);
 
 export const verifyUserApi = (id: string) =>

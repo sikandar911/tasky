@@ -17,14 +17,14 @@ if not User.objects.filter(email='tasky-master@example.com').exists():
         full_name='Tasky Master Admin',
         password='sikku321'
     )
-    print(f"✓ Superadmin created!")
+    print(f"[OK] Superadmin created!")
     print(f"  Email: {user.email}")
     print(f"  Full Name: {user.full_name}")
     print(f"  Role: {user.role}")
     print(f"  Verified: {user.is_verified}")
 else:
     user = User.objects.get(email='tasky-master@example.com')
-    print(f"✓ Superadmin already exists!")
+    print(f"[OK] Superadmin already exists!")
     print(f"  Email: {user.email}")
     print(f"  Full Name: {user.full_name}")
     print(f"  Role: {user.role}")

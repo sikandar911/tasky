@@ -7,13 +7,34 @@ from apps.projects.models import ProjectMember
 from apps.tasks.models import Task
 
 
-def parse_mentions(description: str) -> list:
+def extract_text_from_json(val) -> str:
+    """Recursively extract all text values from a Tiptap JSON-like structure or string."""
+    if isinstance(val, str):
+        return val
+    
+    texts = []
+    def traverse(node):
+        if isinstance(node, dict):
+            if 'text' in node and isinstance(node['text'], str):
+                texts.append(node['text'])
+            for v in node.values():
+                traverse(v)
+        elif isinstance(node, list):
+            for item in node:
+                traverse(item)
+                
+    traverse(val)
+    return " ".join(texts)
+
+
+def parse_mentions(description) -> list:
     """
     Extract mentioned handles from text.
     Matches patterns like @someone or @user@example.com.
     Returns a list of raw strings after the @ symbol.
     """
-    return re.findall(r'@(\S+)', description or '')
+    text = extract_text_from_json(description)
+    return re.findall(r'@(\S+)', text or '')
 
 
 def _build_user_query(emails: list, names: list) -> Q:

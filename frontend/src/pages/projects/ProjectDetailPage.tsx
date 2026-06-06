@@ -31,7 +31,6 @@ export default function ProjectDetailPage() {
 
   const [showEdit, setShowEdit] = useState(false);
   const [showNewTask, setShowNewTask] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskFilters, setTaskFilters] = useState<TaskFiltersParams>({});
 
   const { data: project, isLoading } = useQuery<Project>({
@@ -103,7 +102,7 @@ export default function ProjectDetailPage() {
             Created by {project.created_by.full_name} · {format(parseISO(project.created_at), 'MMM d, yyyy')}
           </p>
         </div>
-        {isOwner && (
+        {isOwner && user?.role !== 'MEMBER' && (
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
@@ -135,7 +134,7 @@ export default function ProjectDetailPage() {
         <MembersList
           projectId={id!}
           members={project.members}
-          isOwner={isOwner}
+          isOwner={isOwner && user?.role !== 'MEMBER'}
         />
       </div>
 
@@ -166,7 +165,7 @@ export default function ProjectDetailPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} onClick={() => setSelectedTask(task)} />
+              <TaskCard key={task.id} task={task} onClick={() => navigate(`/tasks/${task.id}`)} />
             ))}
           </div>
         )}
@@ -199,16 +198,6 @@ export default function ProjectDetailPage() {
             qc.invalidateQueries({ queryKey: ['tasks', { project: id }] });
           }}
         />
-      </Modal>
-
-      {/* Edit Task Modal */}
-      <Modal isOpen={!!selectedTask} onClose={() => setSelectedTask(null)} title="Edit Task" size="lg">
-        {selectedTask && (
-          <TaskForm
-            task={selectedTask}
-            onSuccess={() => setSelectedTask(null)}
-          />
-        )}
       </Modal>
     </>
   );

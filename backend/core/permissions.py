@@ -37,12 +37,35 @@ class IsNotMember(BasePermission):
 
 
 class IsProjectAdmin(BasePermission):
-    """Allow access only to the creator (admin) of the project."""
+    """Allow access only to the creator (admin) of the project, who is not a MEMBER."""
+
+    def _get_project_from_view(self, request, view):
+        """Helper: resolve project from view kwargs."""
+        from apps.projects.models import Project
+        pk = view.kwargs.get('pk') or view.kwargs.get('project_pk')
+        if pk:
+            try:
+                return Project.objects.get(pk=pk)
+            except Project.DoesNotExist:
+                return None
+        return None
 
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
+        if not (request.user and request.user.is_authenticated):
+            return False
+        # Members can never edit/delete projects
+        if getattr(request.user, 'role', None) == 'MEMBER':
+            return False
+        project = self._get_project_from_view(request, view)
+        if project is None:
+            # No project context yet — defer to has_object_permission
+            return True
+        return project.created_by == request.user
 
     def has_object_permission(self, request, view, obj):
+        # Members can never edit/delete projects
+        if getattr(request.user, 'role', None) == 'MEMBER':
+            return False
         # obj can be a Project or a ProjectMember; resolve to Project
         from apps.projects.models import Project, ProjectMember
         if isinstance(obj, Project):
@@ -53,26 +76,6 @@ class IsProjectAdmin(BasePermission):
             project = obj
         return project.created_by == request.user
 
-    def _get_project_from_view(self, request, view):
-        """Helper: resolve project from view kwargs."""
-        from apps.projects.models import Project
-        pk = view.kwargs.get('pk')
-        if pk:
-            try:
-                return Project.objects.get(pk=pk)
-            except Project.DoesNotExist:
-                return None
-        return None
-
-    def has_permission(self, request, view):  # noqa: F811
-        if not (request.user and request.user.is_authenticated):
-            return False
-        project = self._get_project_from_view(request, view)
-        if project is None:
-            # No project context yet — defer to has_object_permission
-            return True
-        return project.created_by == request.user
-
 
 class IsProjectMember(BasePermission):
     """Allow access only to members of the project."""
@@ -81,6 +84,11 @@ class IsProjectMember(BasePermission):
         if not (request.user and request.user.is_authenticated):
             return False
         from apps.projects.models import ProjectMember, Project
+        
+        # In TaskViewSet, 'pk' refers to the Task ID. Defer to has_object_permission.
+        if view.__class__.__name__ == 'TaskViewSet':
+            return True
+            
         pk = view.kwargs.get('pk') or view.kwargs.get('project_pk')
         if pk:
             return ProjectMember.objects.filter(project_id=pk, user=request.user).exists()

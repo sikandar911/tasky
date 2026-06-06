@@ -33,11 +33,18 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
       onClick={onClick}
       className="bg-bg-secondary border border-bg-border rounded-lg p-4 hover:border-accent-cyan/40 transition-all cursor-pointer group"
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <h3 className="text-sm font-medium text-text-primary line-clamp-1 group-hover:text-accent-cyan transition-colors">
-          {task.title}
-        </h3>
-        <Badge variant={task.priority} />
+      <div className="mb-2">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-sm font-medium text-text-primary line-clamp-1 group-hover:text-accent-cyan transition-colors">
+            {task.title}
+          </h3>
+          <Badge variant={task.priority} />
+        </div>
+        {task.project_name && (
+          <p className="text-xs text-text-muted mt-0.5 font-normal">
+            Project: {task.project_name}
+          </p>
+        )}
       </div>
 
       {descriptionPreview && (

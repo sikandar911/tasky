@@ -36,6 +36,7 @@ export interface TaskAttachment {
 export interface Task {
   id: string;
   project: string;
+  project_name?: string;
   title: string;
   description: Record<string, unknown>;
   status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';

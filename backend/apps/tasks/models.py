@@ -79,3 +79,14 @@ class TaskComment(models.Model):
 
     def __str__(self):
         return f'Comment by {self.author.email} on {self.task.title}'
+
+
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+
+@receiver(post_delete, sender=TaskAttachment)
+def delete_attachment_file(sender, instance, **kwargs):
+    """Delete the associated file from MinIO when the TaskAttachment is deleted."""
+    if instance.file:
+        instance.file.delete(save=False)
+
