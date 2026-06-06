@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: #0d1117;
+  color: #e6edf3;
+  font-family: 'Inter', sans-serif;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #161b22; }
+::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+::selection { background: rgba(88, 166, 255, 0.2); }
+
+/* ── TipTap editor prose styles ────────────────────────────────────────── */
+.prose-editor .tiptap {
+  outline: none;
+  min-height: 80px;
+}
+.prose-editor .tiptap p { margin: 0 0 0.4em; }
+.prose-editor .tiptap p:last-child { margin-bottom: 0; }
+.prose-editor .tiptap h1 { font-size: 1.3rem; font-weight: 700; margin: 0.5em 0 0.3em; color: #e6edf3; }
+.prose-editor .tiptap h2 { font-size: 1.1rem; font-weight: 700; margin: 0.5em 0 0.3em; color: #e6edf3; }
+.prose-editor .tiptap h3 { font-size: 0.95rem; font-weight: 700; margin: 0.4em 0 0.25em; color: #e6edf3; }
+.prose-editor .tiptap strong { font-weight: 700; color: #e6edf3; }
+.prose-editor .tiptap ul { list-style-type: disc; padding-left: 1.4em; margin: 0.3em 0; }
+.prose-editor .tiptap ol { list-style-type: decimal; padding-left: 1.4em; margin: 0.3em 0; }
+.prose-editor .tiptap li { margin: 0.15em 0; }
+.prose-editor .tiptap a { color: #58a6ff; text-decoration: underline; cursor: pointer; }
+.prose-editor .tiptap table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+.prose-editor .tiptap th,
+.prose-editor .tiptap td { border: 1px solid #30363d; padding: 4px 8px; font-size: 0.8rem; }
+.prose-editor .tiptap th { background-color: #161b22; font-weight: 600; color: #8b949e; }
+.prose-editor .tiptap .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #484f58;
+  pointer-events: none;
+  height: 0;
+}
+
