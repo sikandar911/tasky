@@ -22,7 +22,9 @@ import {
   Link as LinkIcon,
   Table as TableIcon,
   Unlink,
+  Maximize2,
 } from 'lucide-react';
+import Modal from './Modal';
 
 // ─── Link modal ─────────────────────────────────────────────────────────────
 
@@ -184,6 +186,9 @@ export interface RichTextEditorProps {
   compact?: boolean;
   /** Read-only rendering */
   readOnly?: boolean;
+  hideExpand?: boolean;
+  large?: boolean;
+  onPasteFiles?: (files: File[]) => void;
 }
 
 const FULL_EXTENSIONS = [
@@ -210,9 +215,13 @@ export default function RichTextEditor({
   placeholder = 'Write something...',
   compact = false,
   readOnly = false,
+  hideExpand = false,
+  large = false,
+  onPasteFiles,
 }: RichTextEditorProps) {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
+  const [showExpandModal, setShowExpandModal] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -223,6 +232,35 @@ export default function RichTextEditor({
     editable: !readOnly,
     onUpdate({ editor }) {
       if (onChange) onChange(editor.getJSON() as Record<string, unknown>);
+    },
+    editorProps: {
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+
+        const pastedFiles: File[] = [];
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.type.indexOf('image') !== -1) {
+            const file = item.getAsFile();
+            if (file) {
+              const filename = file.name === 'image.png' || !file.name
+                ? `pasted-image-${Date.now()}-${i}.png`
+                : file.name;
+              const finalFile = new File([file], filename, { type: file.type });
+              pastedFiles.push(finalFile);
+            }
+          }
+        }
+
+        if (pastedFiles.length > 0) {
+          if (onPasteFiles) {
+            onPasteFiles(pastedFiles);
+            return true;
+          }
+        }
+        return false;
+      },
     },
   });
 
@@ -347,12 +385,27 @@ export default function RichTextEditor({
                 </ToolbarButton>
               </>
             )}
+
+            {!hideExpand && (
+              <>
+                <div className="flex-grow" />
+                <ToolbarButton
+                  active={false}
+                  onClick={() => setShowExpandModal(true)}
+                  title="Expand editor"
+                >
+                  <Maximize2 size={14} />
+                </ToolbarButton>
+              </>
+            )}
           </div>
         )}
 
         <EditorContent
           editor={editor}
-          className="prose-editor min-h-[100px] px-3 py-2 text-sm text-text-primary focus:outline-none"
+          className={`prose-editor px-3 py-2 text-sm text-text-primary focus:outline-none overflow-y-auto ${
+            large ? 'min-h-[400px] max-h-[60vh]' : 'min-h-[100px] max-h-[300px]'
+          }`}
         />
       </div>
 
@@ -365,6 +418,27 @@ export default function RichTextEditor({
       )}
       {showTableModal && (
         <TableModal onConfirm={handleTableConfirm} onClose={() => setShowTableModal(false)} />
+      )}
+      {showExpandModal && (
+        <Modal
+          isOpen={showExpandModal}
+          onClose={() => setShowExpandModal(false)}
+          title="Edit Description"
+          size="xl"
+        >
+          <div className="flex flex-col">
+            <RichTextEditor
+              value={value}
+              onChange={onChange}
+              placeholder={placeholder}
+              compact={compact}
+              readOnly={readOnly}
+              hideExpand={true}
+              large={true}
+              onPasteFiles={onPasteFiles}
+            />
+          </div>
+        </Modal>
       )}
     </>
   );

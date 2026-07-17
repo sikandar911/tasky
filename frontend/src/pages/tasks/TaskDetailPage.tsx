@@ -7,6 +7,7 @@ import TaskForm from '@/components/tasks/TaskForm';
 import CommentSection from '@/components/tasks/CommentSection';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import Modal from '@/components/ui/Modal';
+import ImageViewer from '@/components/ui/ImageViewer';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Badge from '@/components/ui/Badge';
@@ -21,6 +22,7 @@ export default function TaskDetailPage() {
   const user = useAuthStore((s) => s.user);
   
   const [showEdit, setShowEdit] = useState(false);
+  const [activeImage, setActiveImage] = useState<{ src: string; name: string } | null>(null);
 
   const { data: task, isLoading } = useQuery<Task>({
     queryKey: ['task', id],
@@ -86,16 +88,14 @@ export default function TaskDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            {user?.role !== 'MEMBER' && (
-              <Button
-                variant="secondary"
-                size="sm"
-                leftIcon={<Edit2 size={12} />}
-                onClick={() => setShowEdit(true)}
-              >
-                Edit
-              </Button>
-            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<Edit2 size={12} />}
+              onClick={() => setShowEdit(true)}
+            >
+              {user?.role === 'MEMBER' ? 'Change Status' : 'Edit'}
+            </Button>
             {(user?.role === 'SUPERADMIN' || user?.role === 'ADMIN') && (
               <Button
                 variant="danger"
@@ -137,11 +137,15 @@ export default function TaskDetailPage() {
                   {task.attachments.map((att) => (
                     <div key={att.id} className="flex items-center gap-3 p-2.5 bg-bg-tertiary rounded-lg border border-bg-border/50">
                       {att.media_type === 'IMAGE' && att.file_url ? (
-                        <a href={att.file_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 flex-1 hover:text-accent-cyan transition-colors">
-                          <img src={att.file_url} alt={att.file_name} className="w-10 h-10 object-cover rounded border border-bg-border" />
+                        <button
+                          type="button"
+                          onClick={() => setActiveImage({ src: att.file_url!, name: att.file_name })}
+                          className="flex items-center gap-2 flex-1 hover:text-accent-cyan transition-colors text-left w-full"
+                        >
+                          <img src={att.file_url || undefined} alt={att.file_name} className="w-10 h-10 object-cover rounded border border-bg-border" />
                           <span className="text-xs text-text-secondary truncate">{att.file_name}</span>
                           <ExternalLink size={11} className="text-text-muted ml-auto" />
-                        </a>
+                        </button>
                       ) : att.media_type === 'VIDEO_URL' && att.video_url ? (
                         <a href={att.video_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 flex-1 hover:text-accent-cyan transition-colors">
                           <div className="w-10 h-10 rounded bg-accent-purple/10 border border-accent-purple/20 flex items-center justify-center text-accent-purple text-xs font-mono">
@@ -231,6 +235,15 @@ export default function TaskDetailPage() {
           }}
         />
       </Modal>
+
+      {activeImage && (
+        <ImageViewer
+          isOpen={true}
+          onClose={() => setActiveImage(null)}
+          src={activeImage.src}
+          alt={activeImage.name}
+        />
+      )}
     </>
   );
 }

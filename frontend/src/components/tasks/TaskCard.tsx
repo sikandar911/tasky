@@ -41,8 +41,11 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
           <Badge variant={task.priority} />
         </div>
         {task.project_name && (
-          <p className="text-xs text-text-muted mt-0.5 font-normal">
-            Project: {task.project_name}
+          <p className="text-xs text-text-secondary mt-1.5 font-medium flex items-center gap-1.5">
+            Project:
+            <span className="text-xs font-semibold text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/20 px-2 py-0.5 rounded">
+              {task.project_name}
+            </span>
           </p>
         )}
       </div>

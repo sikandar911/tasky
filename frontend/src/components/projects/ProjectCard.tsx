@@ -28,7 +28,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       className="bg-bg-secondary border border-bg-border rounded-xl p-5 hover:border-accent-cyan/40 transition-all cursor-pointer group"
     >
       <div className="mb-3">
-        <h3 className="text-base font-semibold text-text-primary group-hover:text-accent-cyan transition-colors mb-1 truncate">
+        <h3 className="text-lg font-bold text-accent-cyan group-hover:text-white transition-colors mb-1 truncate">
           {project.name}
         </h3>
         <p className="text-xs text-text-secondary line-clamp-2 min-h-[32px]">

@@ -14,8 +14,9 @@ import { Input, Textarea } from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import { useState } from 'react';
-import { ArrowLeft, Edit2, Trash2, Plus, CheckSquare } from 'lucide-react';
+import { ArrowLeft, Edit2, Trash2, Plus, CheckSquare, LayoutGrid, List } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import TaskRow from '@/components/tasks/TaskRow';
 import { useForm } from 'react-hook-form';
 
 interface EditFormData {
@@ -32,6 +33,7 @@ export default function ProjectDetailPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showNewTask, setShowNewTask] = useState(false);
   const [taskFilters, setTaskFilters] = useState<TaskFiltersParams>({});
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const { data: project, isLoading } = useQuery<Project>({
     queryKey: ['project', id],
@@ -140,15 +142,43 @@ export default function ProjectDetailPage() {
 
       {/* Tasks */}
       <div className="bg-bg-secondary border border-bg-border rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="text-sm font-semibold text-text-primary">Tasks ({tasks.length})</h3>
-          <Button
-            size="sm"
-            leftIcon={<Plus size={13} />}
-            onClick={() => setShowNewTask(true)}
-          >
-            New Task
-          </Button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center bg-bg-tertiary border border-bg-border rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-md transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-accent-cyan/20 text-accent-cyan'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid size={13} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-md transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-accent-cyan/20 text-accent-cyan'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+                title="List View"
+              >
+                <List size={13} />
+              </button>
+            </div>
+            <Button
+              size="sm"
+              leftIcon={<Plus size={13} />}
+              onClick={() => setShowNewTask(true)}
+            >
+              New Task
+            </Button>
+          </div>
         </div>
 
         <div className="mb-4">
@@ -162,10 +192,16 @@ export default function ProjectDetailPage() {
             description="Add the first task to this project."
             action={{ label: 'New Task', onClick: () => setShowNewTask(true) }}
           />
-        ) : (
+        ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {tasks.map((task) => (
               <TaskCard key={task.id} task={task} onClick={() => navigate(`/tasks/${task.id}`)} />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {tasks.map((task) => (
+              <TaskRow key={task.id} task={task} onClick={() => navigate(`/tasks/${task.id}`)} />
             ))}
           </div>
         )}

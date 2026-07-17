@@ -216,10 +216,8 @@ class TaskViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         task = self.get_object()
         user = request.user
-        # MEMBER may only patch the `status` field on their own assigned tasks
+        # MEMBER may only patch the `status` field on tasks
         if getattr(user, 'role', None) == 'MEMBER':
-            if task.assigned_to_id != user.id:
-                raise PermissionDenied('You can only update status for tasks assigned to you.')
             allowed_keys = set(request.data.keys()) - {'status'}
             if allowed_keys:
                 raise PermissionDenied('Members may only update the status field.')

@@ -1,4 +1,4 @@
-﻿import { useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProjectsApi } from '@/api/projects';
 import { createTaskApi, updateTaskApi } from '@/api/tasks';
@@ -7,7 +7,9 @@ import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import { useState, useRef } from 'react';
-import { Plus, X, Upload } from 'lucide-react';
+import { Plus, X, Upload, ImageIcon } from 'lucide-react';
+import { compressImages } from '@/lib/compressImage';
+import { useAuthStore } from '@/store/authStore';
 
 interface TaskFormData {
   project: string;
@@ -34,6 +36,9 @@ export default function TaskForm({ task, defaultProjectId, onSuccess }: TaskForm
     task?.description && Object.keys(task.description).length ? task.description : {},
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [compressing, setCompressing] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const isMember = user?.role === 'MEMBER';
 
   const { data: projectsData } = useQuery({
     queryKey: ['projects'],
@@ -83,9 +88,17 @@ export default function TaskForm({ task, defaultProjectId, onSuccess }: TaskForm
     mutation.mutate(fd);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const picked = Array.from(e.target.files);
+    setCompressing(true);
+    try {
+      const compressed = await compressImages(picked);
+      setFiles((prev) => [...prev, ...compressed]);
+    } finally {
+      setCompressing(false);
+      // reset input so the same file can be re-picked
+      e.target.value = '';
     }
   };
 
@@ -99,7 +112,7 @@ export default function TaskForm({ task, defaultProjectId, onSuccess }: TaskForm
       {/* Project */}
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-text-secondary">Project *</label>
-        <select {...register('project', { required: 'Project is required' })} className={selectClass}>
+        <select {...register('project', { required: 'Project is required' })} className={selectClass} disabled={isMember}>
           <option value="">Select project...</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
@@ -116,15 +129,27 @@ export default function TaskForm({ task, defaultProjectId, onSuccess }: TaskForm
         placeholder="Task title..."
         error={errors.title?.message}
         {...register('title', { required: 'Title is required' })}
+        disabled={isMember}
       />
 
-      {/* Description â€” TipTap rich text */}
+      {/* Description — TipTap rich text */}
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-text-secondary">Description</label>
         <RichTextEditor
           value={description}
           onChange={setDescription}
           placeholder="Describe the task... Use @email to mention someone."
+          readOnly={isMember}
+          onPasteFiles={async (pastedFiles) => {
+            if (isMember) return;
+            setCompressing(true);
+            try {
+              const compressed = await compressImages(pastedFiles);
+              setFiles((prev) => [...prev, ...compressed]);
+            } finally {
+              setCompressing(false);
+            }
+          }}
         />
       </div>
 
@@ -141,7 +166,7 @@ export default function TaskForm({ task, defaultProjectId, onSuccess }: TaskForm
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-text-secondary">Priority</label>
-          <select {...register('priority')} className={selectClass}>
+          <select {...register('priority')} className={selectClass} disabled={isMember}>
             <option value="LOW">Low</option>
             <option value="MEDIUM">Medium</option>
             <option value="HIGH">High</option>
@@ -154,7 +179,7 @@ export default function TaskForm({ task, defaultProjectId, onSuccess }: TaskForm
       {selectedProject && selectedProject.members.length > 0 && (
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-text-secondary">Assigned To</label>
-          <select {...register('assigned_to_id')} className={selectClass}>
+          <select {...register('assigned_to_id')} className={selectClass} disabled={isMember}>
             <option value="">Unassigned</option>
             {selectedProject.members.map((m) => (
               <option key={m.user.id} value={m.user.id}>
@@ -166,68 +191,97 @@ export default function TaskForm({ task, defaultProjectId, onSuccess }: TaskForm
       )}
 
       {/* Due Date */}
-      <Input label="Due Date" type="datetime-local" {...register('due_date')} />
+      <Input label="Due Date" type="datetime-local" {...register('due_date')} disabled={isMember} />
 
       {/* File Upload */}
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-text-secondary">Attachments</label>
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="border border-dashed border-bg-border rounded-lg p-4 text-center cursor-pointer hover:border-accent-cyan/50 hover:bg-bg-tertiary/50 transition-all"
-        >
-          <Upload size={18} className="mx-auto mb-2 text-text-muted" />
-          <p className="text-xs text-text-muted">Click to upload files</p>
-          <input ref={fileInputRef} type="file" title="Upload files" multiple onChange={handleFileChange} className="hidden" />
-        </div>
-        {files.length > 0 && (
-          <div className="space-y-1">
-            {files.map((f, i) => (
-              <div key={i} className="flex items-center justify-between bg-bg-tertiary rounded-lg px-3 py-2">
-                <span className="text-xs text-text-secondary truncate">{f.name}</span>
-                <button type="button" title="Remove file" onClick={() => removeFile(i)} className="text-text-muted hover:text-accent-red ml-2">
-                  <X size={13} />
-                </button>
-              </div>
-            ))}
+      {!isMember && (
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-text-secondary">Attachments</label>
+          {/* Upload drop zone */}
+          <div
+            onClick={() => !compressing && fileInputRef.current?.click()}
+            className={`border border-dashed rounded-lg p-4 text-center transition-all ${
+              compressing
+                ? 'border-accent-cyan/30 cursor-not-allowed opacity-60'
+                : 'border-bg-border cursor-pointer hover:border-accent-cyan/50 hover:bg-bg-tertiary/50'
+            }`}
+          >
+            {compressing ? (
+              <>
+                <div className="w-5 h-5 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <p className="text-xs text-accent-cyan">Compressing images…</p>
+              </>
+            ) : (
+              <>
+                <Upload size={18} className="mx-auto mb-2 text-text-muted" />
+                <p className="text-xs text-text-muted">Click to upload files</p>
+              </>
+            )}
+            <input ref={fileInputRef} type="file" title="Upload files" multiple onChange={handleFileChange} className="hidden" />
           </div>
-        )}
-      </div>
+
+          {files.length > 0 && (
+            <div className="space-y-1">
+              {files.map((f, i) => {
+                const isImage = f.type.startsWith('image/');
+                const sizeKB = (f.size / 1024).toFixed(0);
+                return (
+                  <div key={i} className="flex items-center justify-between bg-bg-tertiary rounded-lg px-3 py-2 gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {isImage && <ImageIcon size={12} className="text-accent-cyan shrink-0" />}
+                      <span className="text-xs text-text-secondary truncate">{f.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] text-text-muted">{sizeKB} KB</span>
+                      <button type="button" title="Remove file" onClick={() => removeFile(i)} className="text-text-muted hover:text-accent-red">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Video URLs */}
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-text-secondary">Video URLs</label>
-        {videoUrls.map((url, i) => (
-          <div key={i} className="flex gap-2">
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => {
-                const updated = [...videoUrls];
-                updated[i] = e.target.value;
-                setVideoUrls(updated);
-              }}
-              placeholder="https://..."
-              className="flex-1 bg-bg-tertiary border border-bg-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 focus:border-accent-cyan"
-            />
-            <button
-              type="button"
-              title="Remove URL"
-              onClick={() => setVideoUrls((prev) => prev.filter((_, idx) => idx !== i))}
-              className="p-2 text-text-muted hover:text-accent-red"
-            >
-              <X size={14} />
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() => setVideoUrls((prev) => [...prev, ''])}
-          className="flex items-center gap-1.5 text-xs text-text-muted hover:text-accent-cyan transition-colors"
-        >
-          <Plus size={13} />
-          Add video URL
-        </button>
-      </div>
+      {!isMember && (
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-text-secondary">Video URLs</label>
+          {videoUrls.map((url, i) => (
+            <div key={i} className="flex gap-2">
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => {
+                  const updated = [...videoUrls];
+                  updated[i] = e.target.value;
+                  setVideoUrls(updated);
+                }}
+                placeholder="https://..."
+                className="flex-1 bg-bg-tertiary border border-bg-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 focus:border-accent-cyan"
+              />
+              <button
+                type="button"
+                title="Remove URL"
+                onClick={() => setVideoUrls((prev) => prev.filter((_, idx) => idx !== i))}
+                className="p-2 text-text-muted hover:text-accent-red"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setVideoUrls((prev) => [...prev, ''])}
+            className="flex items-center gap-1.5 text-xs text-text-muted hover:text-accent-cyan transition-colors"
+          >
+            <Plus size={13} />
+            Add video URL
+          </button>
+        </div>
+      )}
 
       {mutation.isError && <p className="text-xs text-accent-red">Failed to save task. Please try again.</p>}
 

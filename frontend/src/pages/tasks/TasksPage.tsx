@@ -14,9 +14,10 @@ import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import Badge from '@/components/ui/Badge';
-import { Plus, CheckSquare, Trash2, Edit2, ExternalLink, Paperclip, Calendar, User } from 'lucide-react';
+import { Plus, CheckSquare, Trash2, Edit2, ExternalLink, Paperclip, Calendar, User, LayoutGrid, List } from 'lucide-react';
 import { format, parseISO, isPast } from 'date-fns';
 import { useAuthStore } from '@/store/authStore';
+import TaskRow from '@/components/tasks/TaskRow';
 
 export default function TasksPage() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export default function TasksPage() {
   const [filters, setFilters] = useState<TaskFiltersParams>({});
   const [showCreate, setShowCreate] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const { data: tasksData, isLoading } = useQuery({
     queryKey: ['tasks', filters],
@@ -55,9 +57,37 @@ export default function TasksPage() {
             {tasksData?.count ?? 0} task{(tasksData?.count ?? 0) !== 1 ? 's' : ''}
           </p>
         </div>
-        <Button leftIcon={<Plus size={14} />} onClick={() => setShowCreate(true)}>
-          New Task
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-bg-tertiary border border-bg-border rounded-lg p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-md transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-accent-cyan/20 text-accent-cyan'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+              title="Grid View"
+            >
+              <LayoutGrid size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-md transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-accent-cyan/20 text-accent-cyan'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+              title="List View"
+            >
+              <List size={15} />
+            </button>
+          </div>
+          <Button leftIcon={<Plus size={14} />} onClick={() => setShowCreate(true)}>
+            New Task
+          </Button>
+        </div>
       </div>
 
       <div className="mb-5">
@@ -76,11 +106,19 @@ export default function TasksPage() {
           action={{ label: 'New Task', onClick: () => setShowCreate(true) }}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onClick={() => navigate(`/tasks/${task.id}`)} />
-          ))}
-        </div>
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {tasks.map((task) => (
+              <TaskCard key={task.id} task={task} onClick={() => navigate(`/tasks/${task.id}`)} />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {tasks.map((task) => (
+              <TaskRow key={task.id} task={task} onClick={() => navigate(`/tasks/${task.id}`)} />
+            ))}
+          </div>
+        )
       )}
 
       {/* Create Task Modal */}
