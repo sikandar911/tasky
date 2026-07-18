@@ -141,6 +141,8 @@ AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = 'private'
 AWS_S3_VERIFY = False
 AWS_QUERYSTRING_AUTH = True
+AWS_S3_ADDRESSING_STYLE = 'path'
+AWS_S3_SIGNATURE_VERSION = 's3v4'
 DEFAULT_FILE_STORAGE = 'core.storage.MinIOStorage'
 
 # ---------------------------------------------------------------------------

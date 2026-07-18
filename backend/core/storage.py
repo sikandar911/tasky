@@ -1,4 +1,5 @@
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 from django.conf import settings
 from storages.backends.s3boto3 import S3Boto3Storage
@@ -29,6 +30,7 @@ def generate_presigned_url(file_path: str, expiry: int = 3600) -> str | None:
             endpoint_url=settings.AWS_S3_ENDPOINT_URL,
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            config=Config(signature_version='s3v4', s3={'addressing_style': 'path'}),
             verify=False,
         )
         url = s3_client.generate_presigned_url(
