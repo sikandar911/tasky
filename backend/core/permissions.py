@@ -83,6 +83,11 @@ class IsProjectMember(BasePermission):
     def has_permission(self, request, view):
         if not (request.user and request.user.is_authenticated):
             return False
+            
+        # System admins (SUPERADMIN/ADMIN) have full access
+        if getattr(request.user, 'role', None) in ('SUPERADMIN', 'ADMIN'):
+            return True
+
         from apps.projects.models import ProjectMember, Project
         
         # In TaskViewSet, 'pk' refers to the Task ID. Defer to has_object_permission.
@@ -96,6 +101,10 @@ class IsProjectMember(BasePermission):
         return True
 
     def has_object_permission(self, request, view, obj):
+        # System admins (SUPERADMIN/ADMIN) have full access
+        if getattr(request.user, 'role', None) in ('SUPERADMIN', 'ADMIN'):
+            return True
+
         from apps.projects.models import ProjectMember
         # obj could be a Task or Project
         project = getattr(obj, 'project', obj)

@@ -199,8 +199,11 @@ class TaskViewSet(viewsets.ModelViewSet):
         return [IsProjectMember()]
 
     def get_queryset(self):
+        user = self.request.user
+        if getattr(user, 'role', None) in ('SUPERADMIN', 'ADMIN'):
+            return Task.objects.all().select_related('project', 'created_by', 'assigned_to').prefetch_related('attachments').distinct()
         return Task.objects.filter(
-            project__members__user=self.request.user
+            project__members__user=user
         ).select_related('project', 'created_by', 'assigned_to').prefetch_related('attachments').distinct()
 
     def get_serializer_class(self):

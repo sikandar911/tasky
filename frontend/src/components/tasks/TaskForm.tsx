@@ -75,6 +75,14 @@ export default function TaskForm({ task, defaultProjectId, onSuccess }: TaskForm
   });
 
   const onSubmit = (data: TaskFormData) => {
+    // Members may only update the status field — send a minimal payload to avoid 403
+    if (isMember && task) {
+      const fd = new FormData();
+      fd.append('status', data.status);
+      mutation.mutate(fd);
+      return;
+    }
+
     const fd = new FormData();
     fd.append('project', data.project);
     fd.append('title', data.title);
