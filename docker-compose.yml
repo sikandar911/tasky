@@ -1,0 +1,26 @@
+services:
+  tasky-backend:
+    build: ./backend
+    container_name: tasky-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8010:8000"
+    networks:
+      - docker_app_network
+
+  tasky-frontend:
+    build: ./frontend
+    container_name: tasky-frontend
+    restart: unless-stopped
+    depends_on:
+      - tasky-backend
+    ports:
+      - "3004:80"
+    networks:
+      - docker_app_network
+
+networks:
+  docker_app_network:
+    external: true
