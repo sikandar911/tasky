@@ -72,7 +72,7 @@ export default function UsersPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
             <Shield size={18} className="text-accent-cyan" />
@@ -80,7 +80,7 @@ export default function UsersPage() {
           </h2>
           <p className="text-sm text-text-secondary mt-0.5">{data?.count ?? 0} registered users</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <div
               onClick={() => setOnlyUnverified((v) => !v)}
@@ -102,7 +102,8 @@ export default function UsersPage() {
         </div>
       ) : (
         <div className="bg-bg-secondary border border-bg-border rounded-xl overflow-hidden">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px] sm:min-w-0">
             <thead>
               <tr className="border-b border-bg-border">
                 <th className="text-left px-5 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">User</th>
@@ -170,7 +171,8 @@ export default function UsersPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
           {filtered.length === 0 && (
             <div className="py-12 text-center text-sm text-text-muted">No users found.</div>
           )}

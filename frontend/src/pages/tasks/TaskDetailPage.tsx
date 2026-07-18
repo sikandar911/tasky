@@ -67,7 +67,7 @@ export default function TaskDetailPage() {
     <>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
             <button
               onClick={() => navigate(-1)}

@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, CheckSquare, Users, LogOut, Zap } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, CheckSquare, Users, LogOut, Zap, X } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
 const navItems = [
@@ -17,7 +17,12 @@ function getInitials(name: string) {
     .slice(0, 2);
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, logout, isSuperAdmin } = useAuthStore();
   const isAdminOrAbove = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
   const navigate = useNavigate();
@@ -28,17 +33,40 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-60 flex-shrink-0 bg-bg-secondary border-r border-bg-border flex flex-col h-screen">
-      {/* Logo */}
-      <div className="px-5 py-4 border-b border-bg-border">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-accent-cyan/10 border border-accent-cyan/20">
-            <Zap size={16} className="text-accent-cyan" />
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm transition-opacity duration-300"
+        />
+      )}
+
+      <aside
+        className={`w-60 flex-shrink-0 bg-bg-secondary border-r border-bg-border flex flex-col h-screen fixed md:static inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0`}
+      >
+        {/* Logo */}
+        <div className="px-5 py-4 border-b border-bg-border flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-accent-cyan/10 border border-accent-cyan/20">
+                <Zap size={16} className="text-accent-cyan" />
+              </div>
+              <span className="text-lg font-bold font-mono tracking-widest text-accent-cyan">TASKY</span>
+            </div>
+            <p className="text-xs text-text-muted mt-1 font-mono">task management system</p>
           </div>
-          <span className="text-lg font-bold font-mono tracking-widest text-accent-cyan">TASKY</span>
+          {/* Mobile close button */}
+          <button
+            onClick={onClose}
+            className="md:hidden p-1.5 rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
+            aria-label="Close menu"
+          >
+            <X size={16} />
+          </button>
         </div>
-        <p className="text-xs text-text-muted mt-1 font-mono">task management system</p>
-      </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
@@ -112,5 +140,6 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+  </>
   );
 }

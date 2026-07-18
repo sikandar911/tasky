@@ -4,11 +4,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getNotificationsApi, markAllReadApi, markReadApi } from '@/api/notifications';
 import { Notification } from '@/types';
-import { Bell } from 'lucide-react';
+import { Bell, Menu } from 'lucide-react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 
 interface HeaderProps {
   action?: React.ReactNode;
+  onMenuToggle?: () => void;
 }
 
 const routeTitles: Record<string, string> = {
@@ -27,7 +28,7 @@ function getInitials(name: string) {
     .slice(0, 2);
 }
 
-export default function Header({ action }: HeaderProps) {
+export default function Header({ action, onMenuToggle }: HeaderProps) {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const qc = useQueryClient();
@@ -71,8 +72,17 @@ export default function Header({ action }: HeaderProps) {
   }, [open]);
 
   return (
-    <header className="h-14 bg-bg-secondary border-b border-bg-border flex items-center justify-between px-6 flex-shrink-0">
+    <header className="h-14 bg-bg-secondary border-b border-bg-border flex items-center justify-between px-4 sm:px-6 flex-shrink-0">
       <div className="flex items-center gap-3">
+        {onMenuToggle && (
+          <button
+            onClick={onMenuToggle}
+            className="md:hidden p-1.5 rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
+            aria-label="Open menu"
+          >
+            <Menu size={18} />
+          </button>
+        )}
         <h1 className="text-sm font-semibold text-text-primary">{title}</h1>
         {location.pathname.startsWith('/projects/') && location.pathname !== '/projects' && (
           <span className="text-text-muted text-sm">/</span>
