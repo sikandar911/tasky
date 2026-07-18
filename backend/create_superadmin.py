@@ -11,10 +11,10 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 # Check if superadmin exists
-if not User.objects.filter(email='tasky-master@example.com').exists():
+if not User.objects.filter(email='admin.tasky@fireworksco.uk').exists():
     user = User.objects.create_superuser(
-        email='tasky-master@example.com',
-        full_name='Tasky Master Admin',
+        email='admin.tasky@fireworksco.uk',
+        full_name='Tasky Admin',
         password='sikku321'
     )
     print(f"[OK] Superadmin created!")
@@ -23,7 +23,7 @@ if not User.objects.filter(email='tasky-master@example.com').exists():
     print(f"  Role: {user.role}")
     print(f"  Verified: {user.is_verified}")
 else:
-    user = User.objects.get(email='tasky-master@example.com')
+    user = User.objects.get(email='admin.tasky@fireworksco.uk')
     print(f"[OK] Superadmin already exists!")
     print(f"  Email: {user.email}")
     print(f"  Full Name: {user.full_name}")
